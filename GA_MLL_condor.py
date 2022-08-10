@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3.9
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 PROG = 'QDMLL'
-PATH = "/net/granat/users/meinecke/QDMLL/GA"
+PATH = "/net/granat/users/meinecke/QDMLL/GA_2"
 
 ### define hyperparameters
 n_pop = 100
@@ -31,7 +31,7 @@ n_genes = input_bounds.shape[0]
 p_cross = 0.8
 p_mut = 1.0/(1.0*n_genes)
 p_mut_uni = 0.5
-p_mut_ch = 1.0/n_genes
+p_mut_ch = 3.0/n_genes
 k_tourn = 3
 
 verb = True
@@ -97,12 +97,19 @@ def calc_scores(pop):
     process = subprocess.Popen(substr, shell=True, stdout=subprocess.PIPE)
     #process = subprocess.Popen(substr, shell=True)
     process.wait()
+    output = str(process.stdout.read())
+    
+    import re
+    result = re.search('submitted to cluster (.*)[.]', output)
+    cluster_number = result.group(1)
+    print("cluster: ", cluster_number)
+    
     
     ### check every few second whether jobs have finished
     jobs_completed = False
     while not jobs_completed:
       time.sleep(5.0)
-      process = subprocess.Popen('qstat | grep meinecke', shell=True, stdout=subprocess.PIPE)
+      process = subprocess.Popen('qstat | grep '+str(cluster_number) + '.', shell=True, stdout=subprocess.PIPE)
       process.wait()
       output = str(process.stdout.read())
       out = output.strip("b'")
@@ -118,10 +125,18 @@ def calc_scores(pop):
     for k in range(pop.shape[0]): 
       scrs[k] = get_float_from_file(PATH + "/individual_" + "{:03d}".format(k+1), 'fitness')
     
+    
+    keywords = ['pump', 'mean_power', 'mean_peak_power', 'pulse_width_FWHM', 'pulse_width_std']
+    measurements = np.zeros((pop.shape[0], len(keywords)))
+    for n in range(pop.shape[0]):
+      for m,keyword in enumerate(keywords):
+        measurements[n,m] =  get_float_from_file(PATH + "/individual_" + "{:03d}".format(n+1), keyword)
+      
+    
     #plt.plot(scrs)
     #plt.show()
     
-    return scrs
+    return scrs, measurements
   
   
   
@@ -194,9 +209,9 @@ pop_evoMat[0] = rng.uniform(low=input_bounds.T[0], high=input_bounds.T[1], size=
 for k in range(n_max_gen-1):
     
     ### calculate scores
-    scores[k] = calc_scores(pop_evoMat[k])
+    scores[k], measurements = calc_scores(pop_evoMat[k])
     if verb:
-        print('generation: ' + str(k))
+        print('generation: ' + str(k+1))
         print('mean score: ' + str(np.mean(scores[k])))
         bestInd = np.argmax(scores[k])
         print('best score: ' + str(scores[k,bestInd]))
@@ -206,6 +221,7 @@ for k in range(n_max_gen-1):
     sorted_ind = np.flip(np.argsort(scores[k]))
     scores[k] = scores[k,sorted_ind]
     pop_evoMat[k] = pop_evoMat[k,sorted_ind]
+    measurements = measurements[sorted_ind]
     #print(scores[k])
     #plt.plot(scores[k])
     #plt.show()
@@ -235,16 +251,19 @@ for k in range(n_max_gen-1):
     
     np.savetxt(PATH + '/pop_k'+ "{:03d}".format(k+1),pop_evoMat[k])
     np.savetxt(PATH + '/scores_k'+ "{:03d}".format(k+1),scores[k])
+    np.savetxt(PATH + "/measurements_k" + "{:03d}".format(k+1), measurements)
     
     
 ### evaluate last generation
-scores[-1] = calc_scores(pop_evoMat[-1])
+scores[-1],measurements = calc_scores(pop_evoMat[-1])
 sorted_ind = np.flip(np.argsort(scores[-1]))
 scores[-1] = scores[-1,sorted_ind]
 pop_evoMat[-1] = pop_evoMat[-1,sorted_ind]
+measurements = measurements[sorted_ind]
 
 np.savetxt(PATH + '/pop_k'+ "{:03d}".format(n_max_gen),pop_evoMat[n_max_gen-1])
 np.savetxt(PATH + '/scores_k'+ "{:03d}".format(n_max_gen),scores[n_max_gen-1])
+np.savetxt(PATH + "/measurements_k" + "{:03d}".format(n_max_gen), measurements)
 
 
 print('final best score: ' + str(scores[-1,0]))

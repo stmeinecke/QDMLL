@@ -11,7 +11,7 @@ PATH = "/net/granat/users/meinecke/QDMLL/GA"
 n_pop = 100
 n_max_gen = 500
 n_elits = 4
-n_challengers = 6
+n_challengers = 8
 
 
 #PG_bounds = [0.005, 0.3]
@@ -29,7 +29,7 @@ n_genes = input_bounds.shape[0]
 
 
 p_cross = 0.8
-p_mut = 1.0/(2.0*n_genes)
+p_mut = 1.0/(1.0*n_genes)
 p_mut_uni = 0.5
 p_mut_ch = 1.0/n_genes
 k_tourn = 3
@@ -79,7 +79,7 @@ def calc_scores(pop):
         argfile.write('-fitness -outTime 10000 -intTime 60000')
         argfile.write(' -noNoise')
         #argfile.write(" -loadHist -histFile " + PATH + "/Xhist.bin" )
-        argfile.write(' -filename individual_' + "{:03d}".format(k))
+        argfile.write(' -filename individual_' + "{:03d}".format(k+1))
         argfile.write(' -J_G ' + "{:1.6f}".format(pop[k,0]))
         argfile.write(' -U ' + "{:1.6f}".format(pop[k,1]))
         argfile.write(' -r_L ' + "{:1.6f}".format(pop[k,2]))
@@ -116,7 +116,7 @@ def calc_scores(pop):
     ### read fitness scores from output files
     scrs = np.zeros(pop.shape[0])
     for k in range(pop.shape[0]): 
-      scrs[k] = get_float_from_file(PATH + "/individual_" + "{:03d}".format(k), 'fitness')
+      scrs[k] = get_float_from_file(PATH + "/individual_" + "{:03d}".format(k+1), 'fitness')
     
     #plt.plot(scrs)
     #plt.show()
@@ -228,13 +228,13 @@ for k in range(n_max_gen-1):
         crossover(pop_evoMat[k+1,m],pop_evoMat[k+1,m+1],p_cross)
     
     ### mutation
-    rel_scale_mut = 1.0*(n_max_gen-k)/n_max_gen + 0.01*k/n_max_gen
+    rel_scale_mut = 1.0*(n_max_gen-k)/n_max_gen + 0.1*k/n_max_gen
     for m in range(n_elits + n_challengers,n_pop):
         mutate(pop_evoMat[k+1,m], p_mut, p_mut_uni = p_mut_uni, rel_scale = rel_scale_mut)
     
     
-    np.savetxt(PATH + '/pop_k'+ "{:03d}".format(k),pop_evoMat[k])
-    np.savetxt(PATH + '/scores_k'+ "{:03d}".format(k),scores[k])
+    np.savetxt(PATH + '/pop_k'+ "{:03d}".format(k+1),pop_evoMat[k])
+    np.savetxt(PATH + '/scores_k'+ "{:03d}".format(k+1),scores[k])
     
     
 ### evaluate last generation
@@ -243,8 +243,8 @@ sorted_ind = np.flip(np.argsort(scores[-1]))
 scores[-1] = scores[-1,sorted_ind]
 pop_evoMat[-1] = pop_evoMat[-1,sorted_ind]
 
-np.savetxt(PATH + '/pop_k'+ "{:03d}".format(n_max_gen-1),pop_evoMat[n_max_gen-1])
-np.savetxt(PATH + '/scores_k'+ "{:03d}".format(n_max_gen-1),scores[n_max_gen-1])
+np.savetxt(PATH + '/pop_k'+ "{:03d}".format(n_max_gen),pop_evoMat[n_max_gen-1])
+np.savetxt(PATH + '/scores_k'+ "{:03d}".format(n_max_gen),scores[n_max_gen-1])
 
 
 print('final best score: ' + str(scores[-1,0]))

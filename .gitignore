@@ -1,6 +1,7 @@
 data/
 *argfile
 *.out
+QDMLL
 
 # Prerequisites
 *.d

@@ -1,11 +1,23 @@
 #!/usr/bin/python3.9
 
+
+# run with: nohup ./GA_MLL_condor.py > foo.out 2> foo.err < /dev/null &
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 
+SEED = 818
+
 PROG = 'QDMLL'
-PATH = "/net/granat/users/meinecke/QDMLL/GA_2"
+PATH = "/net/granat/users/meinecke/QDMLL/GA_seed_" + str(SEED)
+
+import os
+if( os.path.exists(PATH)  ):
+  print("Error: directory " + PATH + " already exists")
+else:
+  os.mkdir(PATH)
+
 
 ### define hyperparameters
 n_pop = 100
@@ -37,7 +49,7 @@ k_tourn = 3
 verb = True
 
 ### random generator
-rng = np.random.default_rng(817)
+rng = np.random.default_rng(SEED)
 
 ### set up population and scores matrices to keep track of the evolution
 pop_evoMat = np.zeros((n_max_gen,n_pop,n_genes))

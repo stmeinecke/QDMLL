@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-SEED = 820
+SEED = 821
 
 PROG = 'QDMLL'
 PATH = "/net/granat/users/meinecke/QDMLL/GA_seed_" + str(SEED)
@@ -21,7 +21,7 @@ else:
 
 ### define hyperparameters
 n_pop = 100
-n_start_gen = 215
+n_start_gen = 214
 n_max_gen = 500
 n_elits = 4
 n_challengers = 8

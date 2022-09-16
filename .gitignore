@@ -1,5 +1,5 @@
 data/
-*argfile
+*argfile*
 *.out
 *.err
 QDMLL

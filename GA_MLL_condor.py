@@ -7,20 +7,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-SEED = 818
+SEED = 820
 
 PROG = 'QDMLL'
 PATH = "/net/granat/users/meinecke/QDMLL/GA_seed_" + str(SEED)
 
 import os
 if( os.path.exists(PATH)  ):
-  print("Error: directory " + PATH + " already exists")
+  print("directory " + PATH + " already exists")
 else:
   os.mkdir(PATH)
 
 
 ### define hyperparameters
 n_pop = 100
+n_start_gen = 215
 n_max_gen = 500
 n_elits = 4
 n_challengers = 8
@@ -52,8 +53,8 @@ verb = True
 rng = np.random.default_rng(SEED)
 
 ### set up population and scores matrices to keep track of the evolution
-pop_evoMat = np.zeros((n_max_gen,n_pop,n_genes))
-scores = np.zeros((n_max_gen,n_pop))
+pop_evoMat = np.zeros((n_max_gen-n_start_gen,n_pop,n_genes))
+scores = np.zeros((n_max_gen-n_start_gen,n_pop))
 
 
 
@@ -82,10 +83,10 @@ def calc_scores(pop):
     #PROG = 'QDMLL'
     #PATH = "/net/granat/users/meinecke/QDMLL/GA"
     if( not os.path.exists(PATH)  ):
-      print(" Error: directory " + PATH + " does not exists" )
+        print("directory " + PATH + " does not exists" )
     
 
-    argfile = open('GA_pyargfile','w')
+    argfile = open('GA_pyargfile_seed_'+str(SEED),'w')
     
     for k in range(pop.shape[0]):
         argfile.write('-fitness -outTime 10000 -intTime 60000')
@@ -103,9 +104,8 @@ def calc_scores(pop):
     argfile.close()
         
     ### condor submission - do not collect output
-    substr = "qsub -mem " + str(MEM) + " -m n -speed 4 -w " + PATH + " -argfile GA_pyargfile " + PROG
-    #print("Submit string: ")
-    #print(substr)
+    substr = "qsub -mem " + str(MEM) + " -m n -speed 4 -w " + PATH + " -argfile GA_pyargfile_seed_" + str(SEED) + ' ' + PROG
+    #print("Submit string: ", substr)
     process = subprocess.Popen(substr, shell=True, stdout=subprocess.PIPE)
     #process = subprocess.Popen(substr, shell=True)
     process.wait()
@@ -214,11 +214,14 @@ def challenger(pop_elits, p_mut_ch=0.2, rel_scale=0.2):
 
 
 ### initialize first generation
-pop_evoMat[0] = rng.uniform(low=input_bounds.T[0], high=input_bounds.T[1], size=(n_pop,n_genes))
+if n_start_gen == 0:
+    pop_evoMat[0] = rng.uniform(low=input_bounds.T[0], high=input_bounds.T[1], size=(n_pop,n_genes))
+if n_start_gen != 0:
+    pop_evoMat[0] = np.loadtxt(PATH + '/pop_k'+ "{:03d}".format(n_start_gen))
 
 
 ### evolve
-for k in range(n_max_gen-1):
+for k in range(n_max_gen-n_start_gen-1):
     
     ### calculate scores
     scores[k], measurements = calc_scores(pop_evoMat[k])
@@ -261,9 +264,9 @@ for k in range(n_max_gen-1):
         mutate(pop_evoMat[k+1,m], p_mut, p_mut_uni = p_mut_uni, rel_scale = rel_scale_mut)
     
     
-    np.savetxt(PATH + '/pop_k'+ "{:03d}".format(k+1),pop_evoMat[k])
-    np.savetxt(PATH + '/scores_k'+ "{:03d}".format(k+1),scores[k])
-    np.savetxt(PATH + "/measurements_k" + "{:03d}".format(k+1), measurements)
+    np.savetxt(PATH + '/pop_k'+ "{:03d}".format(k+n_start_gen+1),pop_evoMat[k])
+    np.savetxt(PATH + '/scores_k'+ "{:03d}".format(k+n_start_gen+1),scores[k])
+    np.savetxt(PATH + "/measurements_k" + "{:03d}".format(k+n_start_gen+1), measurements)
     
     
 ### evaluate last generation

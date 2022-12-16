@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-SEED = 821
+SEED = 822
 
 PROG = 'QDMLL'
 PATH = "/net/granat/users/meinecke/QDMLL/GA_seed_" + str(SEED)
@@ -21,8 +21,8 @@ else:
 
 ### define hyperparameters
 n_pop = 100
-n_start_gen = 214
-n_max_gen = 500
+n_start_gen = 0
+n_max_gen = 300
 n_elits = 4
 n_challengers = 8
 
@@ -221,7 +221,7 @@ if n_start_gen != 0:
 
 
 ### evolve
-for k in range(n_max_gen-n_start_gen-1):
+for k in range(n_max_gen-n_start_gen):
     
     ### calculate scores
     scores[k], measurements = calc_scores(pop_evoMat[k])
@@ -268,16 +268,20 @@ for k in range(n_max_gen-n_start_gen-1):
     np.savetxt(PATH + '/scores_k'+ "{:03d}".format(k+n_start_gen+1),scores[k])
     np.savetxt(PATH + "/measurements_k" + "{:03d}".format(k+n_start_gen+1), measurements)
     
-    
+
+print(scores.shape)
+print(pop_evoMat.shape)
+
 ### evaluate last generation
 scores[-1],measurements = calc_scores(pop_evoMat[-1])
 sorted_ind = np.flip(np.argsort(scores[-1]))
+
 scores[-1] = scores[-1,sorted_ind]
 pop_evoMat[-1] = pop_evoMat[-1,sorted_ind]
 measurements = measurements[sorted_ind]
 
-np.savetxt(PATH + '/pop_k'+ "{:03d}".format(n_max_gen),pop_evoMat[n_max_gen-1])
-np.savetxt(PATH + '/scores_k'+ "{:03d}".format(n_max_gen),scores[n_max_gen-1])
+np.savetxt(PATH + '/pop_k'+ "{:03d}".format(n_max_gen),pop_evoMat[-1])
+np.savetxt(PATH + '/scores_k'+ "{:03d}".format(n_max_gen),scores[-1])
 np.savetxt(PATH + "/measurements_k" + "{:03d}".format(n_max_gen), measurements)
 
 
